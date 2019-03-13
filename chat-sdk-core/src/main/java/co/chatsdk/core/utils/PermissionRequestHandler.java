@@ -3,27 +3,23 @@ package co.chatsdk.core.utils;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.Context;
-import android.content.pm.PackageManager;
-import android.content.pm.PermissionInfo;
-
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
+import android.content.Intent;
+import android.provider.Settings;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import co.chatsdk.core.R;
 import co.chatsdk.core.session.ChatSDK;
 import io.reactivex.Completable;
 import io.reactivex.CompletableEmitter;
-import io.reactivex.Emitter;
-import io.reactivex.functions.Consumer;
 
 import static androidx.core.content.PermissionChecker.PERMISSION_DENIED;
-import static androidx.core.content.PermissionChecker.PERMISSION_GRANTED;
 
 /**
  * Created by ben on 9/28/17.
@@ -48,6 +44,8 @@ public class PermissionRequestHandler {
     private static int MANAGE_DOCUMENTS_REQUEST = 106;
     private static int FINE_LOCATION_REQUEST = 107;
     private static int TAKE_PHOTOS = 108;
+
+    private static int LOCATION_SETTINGS_REQUEST = 110;
 
     public Permission recordAudio () {
         return new Permission(Manifest.permission.RECORD_AUDIO, R.string.permission_record_audio_title, R.string.permission_record_audio_message);
@@ -210,5 +208,28 @@ public class PermissionRequestHandler {
         }
     }
 
+    // Settings Activity
+
+    public Completable startLocaationSettingsActivity(final Activity activity) {
+        return startSettingsActivity(activity, LOCATION_SETTINGS_REQUEST, Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+    }
+
+    public Completable startSettingsActivity(final Activity activity, final int result, String settings) {
+        if (completableMap.containsKey(result)) {
+            return Completable.complete();
+        }
+
+        return Completable.create(emitter -> {
+            completableMap.put(result, emitter);
+            activity.startActivityForResult(new Intent(settings), result);
+        });
+    }
+
+    public void onActivityResult(Context context, int requestCode, int resultCode, @Nullable Intent data) {
+        CompletableEmitter e = completableMap.get(requestCode);
+        if (e == null) return;
+        completableMap.remove(requestCode);
+        e.onComplete();
+    }
 
 }

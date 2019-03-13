@@ -17,6 +17,7 @@ import androidx.viewpager.widget.ViewPager;
 import co.chatsdk.core.Tab;
 import co.chatsdk.core.session.ChatSDK;
 import co.chatsdk.ui.R;
+import co.chatsdk.ui.utils.ToastHelper;
 
 public class MainAppBarActivity extends MainActivity {
     protected TabLayout tabLayout;
@@ -26,6 +27,13 @@ public class MainAppBarActivity extends MainActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        ChatSDK.locationProvider().requestLocationUpdates(this, 3)
+                .subscribe(location -> {
+                    ToastHelper.show(MainAppBarActivity.this, "Location: " + location);
+                }, error -> {
+                    ToastHelper.show(MainAppBarActivity.this, error.getLocalizedMessage());
+                });
     }
 
     protected @LayoutRes
